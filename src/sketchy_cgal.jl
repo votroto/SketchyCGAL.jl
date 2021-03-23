@@ -6,16 +6,28 @@ include("nystrom.jl")
 """linearly interpolate between xs weighted by ws"""
 mix(ws, xs) = sum(w .* x for (w, x) in zip(ws, xs))
 
-function sketchy_cgal(C, As, b; R, iterations=1e3, β=1, K=Inf)
-	n = size(C, 1)
-	d = length(b)
+"""
+Solves a trace constrained SDP:
 
-	sketch = Nystrom(n, R)
-	z = zeros(d)
-	y = zeros(d)
+	min		⟨C, X⟩
+	s.t.	⟨As[i], X⟩ <= b[i], ∀i,
+			X ∈ Symmetric PSD;
+			tr(X) = 1,
+
+where `C, As[1], ..., As[m]` are symmetric matrices of size `n`, `b` is a vector
+of length `m`.
+"""
+function sketchy_cgal(C, As, b; R, iterations=1e3, β=1)
+	n = size(C, 1)
+	m = length(b)
+
+	sketch = Nystrom{Float64}(n, R)
+	z = zeros(m)
+	y = zeros(m)
+
 	for t in 1:iterations
 		βt = β * sqrt(t + 1)
-		qt = t^0.25 * log(n)
+		qt = min(round(Int, t^0.25 * log(n)), n - 1)
 		η = 2 / (t + 1)
 
 		ξ, v = approx_eigmin(C + mix(y + βt * (z - b), As), qt)
@@ -24,7 +36,9 @@ function sketchy_cgal(C, As, b; R, iterations=1e3, β=1, K=Inf)
 		y = y + g * (z - b)
 		update!(sketch, v, η)
 	end
+
 	U, Λ = reconstruct(sketch)
 	Λ = Λ + tr(Λ) * I / R
+
 	U * Λ * U'
 end

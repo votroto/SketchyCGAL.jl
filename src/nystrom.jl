@@ -1,10 +1,10 @@
 using LinearAlgebra
 
-mutable struct Nystrom
-	Ω::AbstractMatrix{Float64}
-	S::AbstractMatrix{Float64}
-	function Nystrom(n, R)
-		new(randn(n, R), zeros(n, R))
+mutable struct Nystrom{T}
+	Ω::AbstractMatrix{T}
+	S::AbstractMatrix{T}
+	function Nystrom{T}(n, R) where{T}
+		new(randn(T, n, R), zeros(n, R))
 	end
 end
 
@@ -20,5 +20,6 @@ function reconstruct(sketch)
 	L = cholesky(Hermitian(sketch.Ω' * Sσ))
 	U, Σ, = svd(Sσ / L)
 	Λ = max.(0, Σ .^ 2 .- σ)
+
 	U, Diagonal(Λ)
 end
