@@ -18,7 +18,7 @@ function reconstruct(sketch)
 	σ = sqrt(n) * eps() * norm(sketch.S)
 	Sσ = sketch.S + σ * sketch.Ω
 	L = cholesky(Hermitian(sketch.Ω' * Sσ))
-	U, Σ, = svd(Sσ / L)
+	U, Σ, = svd(Sσ / L.U)
 	Λ = max.(0, Σ .^ 2 .- σ)
 
 	U, Diagonal(Λ)

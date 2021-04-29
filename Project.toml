@@ -1,0 +1,7 @@
+name = "SketchyCGAL"
+uuid = "de1f3272-3022-4eaa-8e99-90aa5f103116"
+authors = ["tomas votroubek <tomas.votroubek@outlook.com>"]
+version = "0.1.0"
+
+[deps]
+Arpack = "7d9fca2a-8960-54d3-9f78-7d1dccf2cb97"
