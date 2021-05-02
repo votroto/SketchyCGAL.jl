@@ -1,3 +1,5 @@
+using SparseArrays
+
 """
 	mix(ws, xs)
 
@@ -6,7 +8,7 @@ Linearly combine `xs` weighted by `ws`. A "generalized dot product."
 mix(ws, xs) = mapreduce(*, +, ws, xs)
 
 # A slightly less naive version for sparse matrices
-function mix(ws::AbstractVector{W}, xs::AbstractVector{SP}) where {W,SP <: AbstractSparseMatrix{X,I}}
+function mix(ws::AbstractVector{W}, xs::AbstractVector{<:AbstractSparseMatrix{X,I}}) where {W,X,I}
 	is = Vector{I}()
 	js = Vector{I}()
 	vs = Vector{promote_type(W, X)}()
