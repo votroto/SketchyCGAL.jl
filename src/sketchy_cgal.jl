@@ -2,14 +2,8 @@ using LinearAlgebra
 using ProgressMeter
 
 include("eig.jl")
+include("mix.jl")
 include("nystrom.jl")
-
-"""
-	mix(ws, xs)
-
-Linearly combine `xs` weighted by `ws`. A "generalized dot product."
-"""
-mix(ws, xs) = sum(ws .* xs)
 
 """
 	sketchy_cgal(C, As, b; R, iterations=1e3, β=1)
@@ -38,7 +32,7 @@ function sketchy_cgal(C, As, b; R, iterations=1e3, β=1)
 		η = 2 / (t + 1)
 
 		ξ, v = approx_eigmin(C + mix(y + βt * (z - b), As), qt)
-		z = z * (1 - η) + η * dot.(As, Ref(v * v'))
+		z = z * (1 - η) + η * dot.(Ref(v), As, Ref(v))
 		g = min(4 * β * sqrt(t + 2) * η^2 / norm(z - b)^2, β)
 		y = y + g * (z - b)
 		update!(sketch, v, η)
