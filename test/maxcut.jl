@@ -25,7 +25,7 @@ end
 
 function max_cut_sdp_model(weights)
 	n = size(weights, 1)
-
+	
 	As = [sparse([i], [i], [1.0], n, n) for i in 1:n]
 	b = ones(n) / n
 	
@@ -34,13 +34,13 @@ end
 
 function solve_maxcut(W)
 	n = size(W, 1)
-
+	
 	C, As, b = max_cut_sdp_model(laplacian(W))
 	X = sketchy_cgal(normalize(-C), As, b; R=n, iterations=1e3, verbose=false)
-
+	
 	cut = extract_cut(X)
 	value = cut_value(C, cut)
-
+	
 	cut, value
 end
 # Examples --------------------------------------------------------------------
@@ -50,9 +50,9 @@ function maxcut_example_1()
 		0.0 5.0; 
 		5.0 0.0;
 	])
-
+	
 	cut, value = solve_maxcut(W)
-
+	
 	@test cut[1] != cut[2]
 end
 
@@ -65,9 +65,9 @@ function maxcut_example_2()
 	])
 	
 	cut, value = solve_maxcut(W)
-
+	
 	@test cut[1] != cut[2]
-    @test cut[2] == cut[3] == cut[4]
+	@test cut[2] == cut[3] == cut[4]
 end
 
 function maxcut_example_3()
@@ -79,7 +79,7 @@ function maxcut_example_3()
 	])
 	
 	cut, value = solve_maxcut(W)
-
+	
 	@test cut[1] == cut[4]
 	@test cut[2] == cut[3]
 	@test cut[1] != cut[2]

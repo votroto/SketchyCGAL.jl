@@ -6,7 +6,7 @@ include("mix.jl")
 include("nystrom.jl")
 
 """
-	sketchy_cgal(C, As, b; R, iterations=1e3, β=1)
+	sketchy_cgal(C, As, b; R, iterations=1e3, β=1, verbose=true)
 
 Solve a trace constrained SDP:
 
@@ -15,7 +15,7 @@ Solve a trace constrained SDP:
 			X ∈ Symmetric PSD;
 			tr(X) = 1,
 
-where `C, As[1], ..., As[m]` are symmetric matrices of size `n` with norm 1; 
+where `C, As[1], ..., As[m]` are symmetric matrices of size `n` and 
 `b` is a vector of length `m`.
 """
 function sketchy_cgal(C, As, b; R, iterations=1e3, β=1, verbose=true)
