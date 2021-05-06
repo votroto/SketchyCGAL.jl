@@ -18,8 +18,8 @@ Solve a trace constrained SDP:
 where `C, As[1], ..., As[m]` are symmetric matrices of size `n` and 
 `b` is a vector of length `m`.
 """
-function sketchy_cgal(C, As, b; R, iterations=1e3, β=1, verbose=true)
-	progress_bar = Progress(Int(iterations), enabled=verbose)
+function sketchy_cgal(C, As, b; R, iterations=1e3, β=1, info_io=stdout)
+	progress_bar = Progress(Int(iterations), output=info_io)
 
 	n = size(C, 1)
 	m = length(b)

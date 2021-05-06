@@ -36,7 +36,7 @@ function solve_maxcut(W)
 	n = size(W, 1)
 	
 	C, As, b = max_cut_sdp_model(laplacian(W))
-	X = sketchy_cgal(normalize(-C), As, b; R=n, iterations=1e3, verbose=false)
+	X = sketchy_cgal(normalize(-C), As, b; R=n, iterations=1e3, info_io=devnull)
 	
 	cut = extract_cut(X)
 	value = cut_value(C, cut)
