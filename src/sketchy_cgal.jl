@@ -30,10 +30,9 @@ function sketchy_cgal(C, As, b; R, iterations=1e3, β=1, info_io=stdout)
 
 	for t in 1:iterations
 		βt = β * sqrt(t + 1)
-		qt = min(round(Int, t^0.25 * log(n)), n - 1)
 		η = 2 / (t + 1)
 
-		ξ, v = approx_eigmin(C + mix(y + βt * (z - b), As), qt)
+		ξ, v = approx_eigmin(C + mix(y + βt * (z - b), As))
 		z = z * (1 - η) + η * dot.(Ref(v), As, Ref(v))
 		g = min(4 * β * sqrt(t + 2) * η^2 / norm(z - b)^2, β)
 		y = y + g * (z - b)

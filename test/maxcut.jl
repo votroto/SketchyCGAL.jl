@@ -43,6 +43,7 @@ function solve_maxcut(W)
 	
 	cut, value
 end
+
 # Examples --------------------------------------------------------------------
 
 function maxcut_example_1()
