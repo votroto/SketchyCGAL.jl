@@ -5,10 +5,10 @@ using SparseArrays
 
 Linearly combine `xs` weighted by `ws`. A "generalized dot product."
 """
-mix(ws, xs) = mapreduce(*, +, ws, xs)
+mix(ws, xs; kwargs...) = mapreduce(*, +, ws, xs; kwargs...)
 
 # A slightly less naive version for sparse matrices
-function mix(ws::AbstractVector{W}, xs::AbstractVector{<:AbstractSparseMatrix{X,I}}) where {W,X,I}
+function mix(ws::AbstractVector{W}, xs::AbstractVector{<:AbstractSparseMatrix{X,I}}; init) where {W,X,I}
 	is = Vector{I}()
 	js = Vector{I}()
 	vs = Vector{promote_type(W, X)}()
@@ -25,5 +25,5 @@ function mix(ws::AbstractVector{W}, xs::AbstractVector{<:AbstractSparseMatrix{X,
 		append!(vs, vi * w)
 	end
 
-	sparse(is, js, vs)
+	init + sparse(is, js, vs, size(init)...)
 end

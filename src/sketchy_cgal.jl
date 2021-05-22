@@ -8,10 +8,13 @@ include("nystrom.jl")
 dual_step_size(b, z, β, η, t) = min(4β * sqrt(t + 2) * η^2 / norm(z - b)^2, β)
 
 """Partial derivative of the augmented Lagrangian with respect to X."""
-lagrangian_dx(C, As, b, y, z, β) = C + mix(y + β * (z - b), As)
+lagrangian_dx(C, As, b, y, z, β) = mix(y + β * (z - b), As; init=C)
 
 """Partial derivative of the augmented Lagrangian with respect to y."""
 lagrangian_dy(b, z) = z - b
+
+"""Projection step to enforce tr(X) = 1."""
+correct_trace!(Λ, R) = Λ .= Λ + (1 - tr(Λ)) * I / R
 
 """
 	sketchy_cgal(C, As, b; R, iterations=1e3, β=1, info_io=stdout)
@@ -49,7 +52,7 @@ function sketchy_cgal(C, As, b; R, iterations=1e3, β=1, info_io=stdout)
 	end
 
 	U, Λ = reconstruct(sketch)
-	Λ .= Λ + (1 - tr(Λ)) * I / R
+	correct_trace!(Λ, R)
 
 	U * Λ * U'
 end
