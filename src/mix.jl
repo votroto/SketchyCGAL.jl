@@ -17,7 +17,7 @@ function mix(ws::AbstractVector{W}, xs::AbstractVector{<:AbstractSparseMatrix{X,
 	sizehint!(is, n)
 	sizehint!(js, n)
 	sizehint!(vs, n)
-	
+
 	for (w, x) in zip(ws, xs)
 		ii, ji, vi = findnz(x)
 		append!(is, ii)
