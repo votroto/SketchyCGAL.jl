@@ -1,29 +1,21 @@
 using SparseArrays
 
+# It would be great if `Base.mapreduce!` was a thing.
+
 """
-	mix(ws, xs)
+	mix!(out, ws, xs, init)
 
-Linearly combine `xs` weighted by `ws`. A "generalized dot product."
+Linearly combine `xs` weighted by `ws` and store the result in `out`.
 """
-mix(ws, xs; kwargs...) = mapreduce(*, +, ws, xs; kwargs...)
+mix!(out, ws, xs, init) = out .= mapreduce(*, +, ws, xs; init)
 
-# A slightly less naive version for sparse matrices
-function mix(ws::AbstractVector{W}, xs::AbstractVector{<:AbstractSparseMatrix{X,I}}; init) where {W,X,I}
-	is = Vector{I}()
-	js = Vector{I}()
-	vs = Vector{promote_type(W, X)}()
-
-	n = sum(nnz, xs)
-	sizehint!(is, n)
-	sizehint!(js, n)
-	sizehint!(vs, n)
-
-	for (w, x) in zip(ws, xs)
-		ii, ji, vi = findnz(x)
-		append!(is, ii)
-		append!(js, ji)
-		append!(vs, vi * w)
+function mix!(out, ws, xs::AbstractVector{<:AbstractSparseMatrix}, init)
+	map!(+, out, init)
+	for i in 1:length(ws)
+		ii, ji, vi = findnz(xs[i])
+		for j in 1:length(vi)
+			out[ii[j], ji[j]] += vi[j] * ws[i]
+		end
 	end
-
-	init + sparse(is, js, vs, size(init)...)
+	out
 end

@@ -8,7 +8,7 @@ include("nystrom.jl")
 dual_step_size(b, z, β, η, t) = min(4β * sqrt(t + 2) * η^2 / norm(z - b)^2, β)
 
 """Partial derivative of the augmented Lagrangian with respect to X."""
-lagrangian_dx(C, As, b, y, z, β) = mix(y + β * (z - b), As; init=C)
+lagrangian_dx!(Ldx, C, As, b, y, z, β) = mix!(Ldx, y + β * (z - b), As, C)
 
 """Partial derivative of the augmented Lagrangian with respect to y."""
 lagrangian_dy(b, z) = z - b
@@ -36,6 +36,7 @@ function sketchy_cgal(C, As, b; R, iterations=1e3, β=1, info_io=stdout)
 	m = length(b)
 
 	sketch = Nystrom{Float64}(n, R)
+	Ldx = similar(C)
 	z = zeros(m)
 	y = zeros(m)
 
@@ -43,7 +44,7 @@ function sketchy_cgal(C, As, b; R, iterations=1e3, β=1, info_io=stdout)
 		βt = β * sqrt(t + 1)
 		η = 2 / (t + 1)
 
-		ξ, v = approx_eigmin(lagrangian_dx(C, As, b, y, z, βt))
+		ξ, v = approx_eigmin(lagrangian_dx!(Ldx, C, As, b, y, z, βt))
 		z .= z * (1 - η) + η * dot.(Ref(v), As, Ref(v))
 		y .+= dual_step_size(b, z, β, η, t) * lagrangian_dy(b, z)
 		update!(sketch, v, η)
