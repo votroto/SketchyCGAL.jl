@@ -21,7 +21,7 @@ correct_trace!(Λ, R) = Λ .= Λ + (1 - tr(Λ)) * I / R
 
 Solve a trace constrained SDP:
 
-	min		⟨C, X⟩
+	min.	⟨C, X⟩
 	s.t.	⟨As[i], X⟩ <= b[i], ∀i;
 			tr(X) = 1;
 			X ⪰ 0.
@@ -29,7 +29,7 @@ Solve a trace constrained SDP:
 where `C, As[1], ..., As[m]` are symmetric matrices of size `n` and `b` is a
 vector of length `m`. Matrices should be scaled such that their norm is 1.
 """
-function sketchy_cgal(C, As, b; R, iterations=1e3, β=1, info_io=stdout)
+function sketchy_cgal(C, As, b; R, iterations=1e3, β=1, info_io=stderr)
 	progress_bar = Progress(Int(iterations), output=info_io)
 
 	n = checksquare(C)

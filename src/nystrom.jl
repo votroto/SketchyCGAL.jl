@@ -9,8 +9,7 @@ mutable struct Nystrom{T}
 end
 
 function update!(sketch, v, η)
-	sketch.S .*= (1 - η)
-	sketch.S .+= η * v * (v' * sketch.Ω)
+	mul!(sketch.S, v, v' * sketch.Ω, η, 1 - η)
 end
 
 function reconstruct(sketch)
@@ -18,7 +17,7 @@ function reconstruct(sketch)
 
 	σ = sqrt(n) * eps() * norm(sketch.S)
 	Sσ = sketch.S + σ * sketch.Ω
-	L = cholesky(Hermitian(sketch.Ω' * Sσ); check=false)
+	L = cholesky(Hermitian(sketch.Ω' * Sσ); check = false)
 	U, Σ, = svd(Sσ / L.U)
 	Λ = max.(0, Σ .^ 2 .- σ)
 

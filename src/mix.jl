@@ -11,10 +11,9 @@ mix!(out, ws, xs, init) = out .= mapreduce(*, +, ws, xs; init)
 
 function mix!(out, ws, xs::AbstractVector{<:AbstractSparseMatrix}, init)
 	map!(+, out, init)
-	for i in 1:length(ws)
-		ii, ji, vi = findnz(xs[i])
-		for j in 1:length(vi)
-			out[ii[j], ji[j]] += vi[j] * ws[i]
+	for i in eachindex(ws)
+		for j in findall(!iszero, xs[i])
+			out[j] += ws[i] * xs[i][j]
 		end
 	end
 	out
