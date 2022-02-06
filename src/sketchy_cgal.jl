@@ -39,12 +39,13 @@ function sketchy_cgal(C, As, b; R, iterations=1e3, β=1, info_io=stderr)
 	Ldx = similar(C)
 	z = zeros(m)
 	y = zeros(m)
+	v = normalize(randn(n))
 
 	for t in 1:iterations
 		βt = β * sqrt(t + 1)
 		η = 2 / (t + 1)
 
-		ξ, v = approx_eigmin(lagrangian_dx!(Ldx, C, As, b, y, z, βt))
+		approx_eigmin!(v, lagrangian_dx!(Ldx, C, As, b, y, z, βt))
 		z .= z * (1 - η) + η * dot.(Ref(v), As, Ref(v))
 		y .+= dual_step_size(b, z, β, η, t) * lagrangian_dy(b, z)
 		update!(sketch, v, η)

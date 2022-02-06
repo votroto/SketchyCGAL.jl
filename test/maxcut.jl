@@ -10,18 +10,7 @@ using LinearAlgebra
 
 # Model the max-cut SDP relaxation --------------------------------------------
 
-cut_value(C, cut) =	sum(C .* (cut * cut'))
-laplacian(W) = spdiagm(vec(sum(W, dims=1))) - W
-
-function extract_cut(X)
-	rnd = normalize(rand(size(X, 1)))
-
-	factorization = cholesky(Hermitian(X), Val(true); check=false)
-	V = (factorization.P * factorization.L)'
-	vs = map(normalize, eachcol(V))
-
-	map(x -> dot(rnd, x) |> sign, vs)
-end
+laplacian(W) = spdiagm(vec(sum(W, dims = 1))) - W
 
 function max_cut_sdp_model(weights)
 	n = size(weights, 1)
@@ -33,50 +22,42 @@ function max_cut_sdp_model(weights)
 	C, As, b
 end
 
-function solve_maxcut(W)
+function approx_max_cut_value(W)
 	C, As, b = max_cut_sdp_model(W)
 
 	n = size(W, 1)
-	_C = C / opnorm(Matrix(C))
-	_b = b / n
+	scale_C = opnorm(Matrix(C))
+	scale_b = n
 
-	X = sketchy_cgal(-_C, As, _b; R=n, info_io=devnull, iterations=1e4)
+	X = sketchy_cgal(-C / scale_C, As, b / scale_b; R = n, info_io = devnull)
 
-	cut = extract_cut(X)
-	value = cut_value(C, cut)
-
-	cut, value
+	dot(C, X * scale_b)
 end
 
 # Examples --------------------------------------------------------------------
 
 function maxcut_example_1()
 	W = sparse([
-		0 5 7 6;
-		5 0 0 1;
-		7 0 0 1;
-		6 1 1 0;
+		0 5 7 6
+		5 0 0 1
+		7 0 0 1
+		6 1 1 0
 	])
 
-	cut, value = solve_maxcut(W)
+	value = approx_max_cut_value(W)
 
-	@test isapprox(value, 18)
-	@test cut[1] != cut[2]
-	@test cut[2] == cut[3] == cut[4]
+	@test value ≈ 18 rtol = 1e-2
 end
 
 function maxcut_example_2()
 	W = sparse([
-		0 1 5 0;
-		1 0 0 9;
-		5 0 0 2;
-		0 9 2 0;
+		0 1 5 0
+		1 0 0 9
+		5 0 0 2
+		0 9 2 0
 	])
 
-	cut, value = solve_maxcut(W)
+	value = approx_max_cut_value(W)
 
-	@test isapprox(value, 17)
-	@test cut[1] == cut[4]
-	@test cut[2] == cut[3]
-	@test cut[1] != cut[2]
+	@test value ≈ 17 rtol = 1e-2
 end

@@ -1,20 +1,33 @@
 using SparseArrays
 
-# It would be great if `Base.mapreduce!` was a thing.
+"""
+	muladd!(Y, X, a)
+
+Inplace multiply-add, stores the result of `Y + X*a` into `Y`.
+"""
+function muladd!(Y, X, a)
+	BLAS.axpy!(a, X, Y)
+end
+
+function muladd!(Y, X::AbstractSparseMatrix, a)
+	nzs = nonzeros(X)
+	rvs = rowvals(X)
+	@inbounds for col in 1:size(X, 2), j in nzrange(X, col)
+		Y[rvs[j], col] += nzs[j] * a
+	end
+	Y
+end
 
 """
 	mix!(out, ws, xs, init)
 
 Linearly combine `xs` weighted by `ws` and store the result in `out`.
 """
-mix!(out, ws, xs, init) = out .= mapreduce(*, +, ws, xs; init)
-
-function mix!(out, ws, xs::AbstractVector{<:AbstractSparseMatrix}, init)
-	map!(+, out, init)
+function mix!(out, ws, xs, init)
+	fill!(out, zero(eltype(out)))
+	muladd!(out, init, 1)
 	for i in eachindex(ws)
-		for j in findall(!iszero, xs[i])
-			out[j] += ws[i] * xs[i][j]
-		end
+		muladd!(out, xs[i], ws[i])
 	end
 	out
 end

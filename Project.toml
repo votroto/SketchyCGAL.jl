@@ -1,7 +1,7 @@
 name = "SketchyCGAL"
 uuid = "de1f3272-3022-4eaa-8e99-90aa5f103116"
 authors = ["tomas votroubek <tomas.votroubek@outlook.com>"]
-version = "0.1.1"
+version = "0.1.2"
 
 [deps]
 IterativeSolvers = "42fd0dbc-a981-5370-80f2-aaf504508153"
