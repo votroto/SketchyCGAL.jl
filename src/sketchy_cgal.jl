@@ -7,54 +7,84 @@ include("nystrom.jl")
 
 dual_step_size(b, z, β, η, t) = min(4β * sqrt(t + 2) * η^2 / norm(z - b)^2, β)
 
-"""Partial derivative of the augmented Lagrangian with respect to X."""
-lagrangian_dx!(Ldx, C, As, b, y, z, β) = mix!(Ldx, y + β * (z - b), As, C)
+lagrangian_dx!(Ldx, C, yLdyb) = nymix!(Ldx, yLdyb, C)
 
-"""Partial derivative of the augmented Lagrangian with respect to y."""
-lagrangian_dy(b, z) = z - b
+lagrangian_dy!(Ldy, b, z) = Ldy .= z .- b
 
-"""Projection step to enforce tr(X) = 1."""
 correct_trace!(Λ, R) = Λ .= Λ + (1 - tr(Λ)) * I / R
 
-"""
-	sketchy_cgal(C, As, b; R, iterations=1e3, β=1, info_io=stdout)
+is_power_2(x) = (x & (x - 1)) == 0
 
-Solve a trace constrained SDP:
+#surrogate_duality_gap() 
+function primal_variable(sketch, R; correct=true)
+    U, Λ = reconstruct(sketch)
+    if correct
+        correct_trace!(Λ, R)
+    end
+    U * Λ * U'
+end
 
-	min.	⟨C, X⟩
-	s.t.	⟨As[i], X⟩ <= b[i], ∀i;
-			tr(X) = 1;
-			X ⪰ 0.
+laplacian(W) = spdiagm(vec(sum(W, dims=1))) - W
 
-where `C, As[1], ..., As[m]` are symmetric matrices of size `n` and `b` is a
-vector of length `m`. Matrices should be scaled such that their norm is 1.
-"""
-function sketchy_cgal(C, As, b; R, iterations=1e3, β=1, info_io=stderr)
-	progress_bar = Progress(Int(iterations), output=info_io)
+function max_cut_sdp_model(weights)
+    n = size(weights, 1)
 
-	n = checksquare(C)
-	m = length(b)
+    C = laplacian(weights) / 4
+    b = ones(n)
 
-	sketch = Nystrom{Float64}(n, R)
-	Ldx = similar(C)
-	z = zeros(m)
-	y = zeros(m)
-	v = normalize(randn(n))
+    C, b
+end
 
-	for t in 1:iterations
-		βt = β * sqrt(t + 1)
-		η = 2 / (t + 1)
+function approx_max_cut_value(W)
+    C, b = max_cut_sdp_model(W)
 
-		approx_eigmin!(v, lagrangian_dx!(Ldx, C, As, b, y, z, βt))
-		z .= z * (1 - η) + η * dot.(Ref(v), As, Ref(v))
-		y .+= dual_step_size(b, z, β, η, t) * lagrangian_dy(b, z)
-		update!(sketch, v, η)
+    n = size(W, 1)
+    scale_C = opnorm(Matrix(C))
+    scale_b = n
 
-		next!(progress_bar)
-	end
+    X = ny(-C / scale_C, b / scale_b; R=10)
 
-	U, Λ = reconstruct(sketch)
-	correct_trace!(Λ, R)
+    X, dot(C, X * scale_b)
+end
 
-	U * Λ * U'
+function ny(C, b; R, iterations=1000, β=1)
+    n = checksquare(C)
+    m = length(b)
+
+    sketch = Nystrom{Float64}(n, R)
+    z = zeros(m)
+    y = zeros(m)
+    v = normalize(randn(n))
+
+    Ldx = similar(C)
+    Ldy = z - b
+
+    eig_mem = make_min_eigs_workspace(Ldx)
+    vv_mem = similar(v)
+
+    obj_track = 0
+
+    for t in 1:iterations
+        βt = β * sqrt(t + 1)
+        η = 2 / (t + 1)
+
+        mul!(Ldy, y, 1, 1, βt)
+        lagrangian_dx!(Ldx, C, Ldy)
+        approx_eigmin!(v, Ldx, eig_mem)
+
+        copyto!(vv_mem, v .^ 2)
+        mul!(z, vv_mem, 1, η, (1 - η))
+        lagrangian_dy!(Ldy, b, z)
+        step = dual_step_size(b, z, β, η, t)
+        muladd!(y, Ldy, step)
+        update!(sketch, v, η)
+
+
+        obj_track = obj_track * (1 - η) + η * v' * C * v
+        @show obj_track * n
+        if t >= 32 && is_power_2(t)
+        end
+    end
+
+    primal_variable(sketch, R)
 end

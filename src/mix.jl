@@ -24,10 +24,17 @@ end
 Linearly combine `xs` weighted by `ws` and store the result in `out`.
 """
 function mix!(out, ws, xs, init)
-	fill!(out, zero(eltype(out)))
-	muladd!(out, init, 1)
+	copyto!(out, init)
 	for i in eachindex(ws)
 		muladd!(out, xs[i], ws[i])
+	end
+	out
+end
+
+function nymix!(out, ws, init)
+	copyto!(out, init)
+	for i in eachindex(ws)
+		out[i,i] += ws[i]
 	end
 	out
 end
